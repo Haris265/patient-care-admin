@@ -464,6 +464,12 @@ export const api = {
       `/api/clinic/ledger/${qs ? `?${qs}` : ""}`,
     );
   },
+  clinicSpecialities: (params: Record<string, string> = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return request<Paginated<Speciality> | Speciality[]>(
+      `/api/clinic/specialities/${qs ? `?${qs}` : ""}`,
+    );
+  },
   clinicDoctors: (params: Record<string, string> = {}) => {
     const qs = new URLSearchParams(params).toString();
     return request<Paginated<Doctor> | Doctor[]>(
@@ -472,11 +478,31 @@ export const api = {
   },
   clinicDoctor: (uuid: string) =>
     request<ClinicDoctorDetail>(`/api/clinic/doctors/${uuid}/`),
+  createClinicDoctor: (payload: {
+    first_name: string;
+    last_name: string;
+    speciality_ids: number[];
+    session_time: number;
+    email: string;
+    password: string;
+    consultation_fee?: string | number;
+  }) =>
+    request<Doctor>("/api/clinic/doctors/", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
   patchClinicDoctor: (
     uuid: string,
     body: {
+      first_name?: string;
+      last_name?: string;
+      speciality_ids?: number[];
+      session_time?: number;
+      is_active?: boolean;
       commission_type?: string;
       commission_value?: string;
+      discounted_commission_type?: string;
+      discounted_commission_value?: string;
       consultation_fee?: string;
     },
   ) =>
@@ -484,6 +510,19 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify(body),
     }),
+  deleteClinicDoctor: (uuid: string) =>
+    request<void>(`/api/clinic/doctors/${uuid}/`, { method: "DELETE" }),
+  importClinicDoctors: (file: File) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    return request<{
+      created: number;
+      failed: { row: number; email: string | null; error: string }[];
+      total_rows: number;
+    }>("/api/clinic/doctors/import/", { method: "POST", body: fd });
+  },
+  clinicDoctorImportTemplateUrl: () =>
+    `${API_URL}/api/clinic/doctors/import/template/`,
   clinicAppointments: (params: Record<string, string> = {}) => {
     const qs = new URLSearchParams(params).toString();
     return request<Paginated<Appointment> | Appointment[]>(
@@ -492,6 +531,38 @@ export const api = {
   },
   clinicAppointment: (id: number | string) =>
     request<Appointment>(`/api/clinic/appointments/${id}/`),
+  createClinicAppointment: (payload: {
+    patient_name: string;
+    patient_phone: string;
+    doctor: number;
+    token_date: string;
+    slot_time?: string | null;
+    notes?: string;
+    patient_type?: string;
+    jamat_name?: string;
+  }) =>
+    request<Appointment>("/api/clinic/appointments/", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  updateClinicAppointment: (
+    id: number | string,
+    payload: Partial<{
+      status: string;
+      notes: string;
+      doctor: number;
+      token_date: string;
+      scheduled_at: string;
+      patient_type: string;
+      jamat_name: string;
+    }>,
+  ) =>
+    request<Appointment>(`/api/clinic/appointments/${id}/`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+  deleteClinicAppointment: (id: number | string) =>
+    request<void>(`/api/clinic/appointments/${id}/`, { method: "DELETE" }),
 };
 
 export function unwrapList<T>(data: Paginated<T> | T[]): T[] {

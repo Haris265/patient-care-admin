@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { api } from "@/lib/api";
+import { formatPkDate, formatPkPhone, formatPkTime } from "@/lib/pkFormat";
 import type { ClinicDoctorDetail } from "@/lib/types";
 import { Badge, Button, Card, PageHeader, Skeleton } from "@/components/ui";
 
@@ -22,13 +23,22 @@ function timeShort(t: string) {
 
 export default function ClinicDoctorDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const uuid = String(params.id || "");
   const [doctor, setDoctor] = useState<ClinicDoctorDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [savingNormal, setSavingNormal] = useState(false);
+  const [savingDiscounted, setSavingDiscounted] = useState(false);
+  const [sessionTime, setSessionTime] = useState(15);
+  const [isActive, setIsActive] = useState(true);
   const [commissionType, setCommissionType] = useState("percentage");
   const [commissionValue, setCommissionValue] = useState("20");
+  const [discountedCommissionType, setDiscountedCommissionType] =
+    useState("percentage");
+  const [discountedCommissionValue, setDiscountedCommissionValue] =
+    useState("20");
   const [consultationFee, setConsultationFee] = useState("");
 
   const reload = () => {
@@ -38,8 +48,16 @@ export default function ClinicDoctorDetailPage() {
       .clinicDoctor(uuid)
       .then((d) => {
         setDoctor(d);
+        setSessionTime(d.session_time);
+        setIsActive(d.is_active);
         setCommissionType(d.clinic_link?.commission_type || "percentage");
         setCommissionValue(d.clinic_link?.commission_value || "20");
+        setDiscountedCommissionType(
+          d.clinic_link?.discounted_commission_type || "percentage",
+        );
+        setDiscountedCommissionValue(
+          d.clinic_link?.discounted_commission_value || "20",
+        );
         setConsultationFee(d.consultation_fee || "");
       })
       .catch((e) => setError(e instanceof Error ? e.message : "Failed to load"))
@@ -58,13 +76,23 @@ export default function ClinicDoctorDetailPage() {
     return Math.max(0, Math.round((100 - clinicPct) * 100) / 100);
   }, [commissionType, commissionValue]);
 
-  /** Live per-visit split from current fee + % / fixed inputs (before save). */
-  const liveSplit = useMemo(() => {
-    const fee = Number(consultationFee);
-    const val = Number(commissionValue);
+  const discountedDoctorPctLabel = useMemo(() => {
+    if (discountedCommissionType !== "percentage") return null;
+    const clinicPct = Number(discountedCommissionValue);
+    if (Number.isNaN(clinicPct)) return null;
+    return Math.max(0, Math.round((100 - clinicPct) * 100) / 100);
+  }, [discountedCommissionType, discountedCommissionValue]);
+
+  function previewSplit(
+    feeRaw: string,
+    type: string,
+    valueRaw: string,
+  ): { fee: number; clinicShare: number; doctorShare: number } | null {
+    const fee = Number(feeRaw);
+    const val = Number(valueRaw);
     if (Number.isNaN(fee) || fee < 0 || Number.isNaN(val) || val < 0) return null;
     let clinicShare: number;
-    if (commissionType === "percentage") {
+    if (type === "percentage") {
       const pct = Math.min(100, Math.max(0, val));
       clinicShare = (fee * pct) / 100;
     } else {
@@ -73,44 +101,129 @@ export default function ClinicDoctorDetailPage() {
     clinicShare = Math.round(clinicShare * 100) / 100;
     const doctorShare = Math.round((fee - clinicShare) * 100) / 100;
     return { fee, clinicShare, doctorShare };
-  }, [commissionType, commissionValue, consultationFee]);
+  }
 
-  async function saveCommission() {
+  /** Live per-visit split from current fee + % / fixed inputs (before save). */
+  const liveSplit = useMemo(
+    () => previewSplit(consultationFee, commissionType, commissionValue),
+    [commissionType, commissionValue, consultationFee],
+  );
+
+  const liveDiscountedSplit = useMemo(
+    () =>
+      previewSplit(
+        consultationFee,
+        discountedCommissionType,
+        discountedCommissionValue,
+      ),
+    [discountedCommissionType, discountedCommissionValue, consultationFee],
+  );
+
+  function applyDoctorState(updated: ClinicDoctorDetail) {
+    setDoctor(updated);
+    setSessionTime(updated.session_time);
+    setIsActive(updated.is_active);
+    setCommissionType(updated.clinic_link.commission_type);
+    setCommissionValue(updated.clinic_link.commission_value);
+    setDiscountedCommissionType(
+      updated.clinic_link.discounted_commission_type || "percentage",
+    );
+    setDiscountedCommissionValue(
+      updated.clinic_link.discounted_commission_value || "20",
+    );
+    setConsultationFee(updated.consultation_fee || "");
+  }
+
+  async function saveSettings() {
     if (!uuid) return;
-    setSaving(true);
+    setSavingSettings(true);
+    setError("");
+    try {
+      const updated = await api.patchClinicDoctor(uuid, {
+        session_time: sessionTime,
+        is_active: isActive,
+        consultation_fee: consultationFee || undefined,
+      });
+      applyDoctorState(updated);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to save settings");
+    } finally {
+      setSavingSettings(false);
+    }
+  }
+
+  async function saveNormalCommission() {
+    if (!uuid) return;
+    setSavingNormal(true);
     setError("");
     try {
       const updated = await api.patchClinicDoctor(uuid, {
         commission_type: commissionType,
         commission_value: commissionValue,
-        consultation_fee: consultationFee || undefined,
       });
-      // API returns recalculated appointments + stats — refresh UI immediately.
-      setDoctor(updated);
-      setCommissionType(updated.clinic_link.commission_type);
-      setCommissionValue(updated.clinic_link.commission_value);
-      setConsultationFee(updated.consultation_fee || "");
+      applyDoctorState(updated);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to save");
+      setError(e instanceof Error ? e.message : "Failed to save commission");
     } finally {
-      setSaving(false);
+      setSavingNormal(false);
+    }
+  }
+
+  async function saveDiscountedCommission() {
+    if (!uuid) return;
+    setSavingDiscounted(true);
+    setError("");
+    try {
+      const updated = await api.patchClinicDoctor(uuid, {
+        discounted_commission_type: discountedCommissionType,
+        discounted_commission_value: discountedCommissionValue,
+      });
+      applyDoctorState(updated);
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : "Failed to save discounted commission",
+      );
+    } finally {
+      setSavingDiscounted(false);
+    }
+  }
+
+  async function removeFromClinic() {
+    if (!doctor) return;
+    if (
+      !window.confirm(
+        `Remove Dr. ${doctor.full_name} from this clinic? Their account will remain.`,
+      )
+    ) {
+      return;
+    }
+    try {
+      await api.deleteClinicDoctor(doctor.uuid);
+      router.push("/clinic/doctors");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Remove failed");
     }
   }
 
   return (
     <div className="animate-fade-in space-y-6">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <Link href="/clinic/doctors">
           <Button variant="secondary" className="px-3 py-2">
             <ArrowLeft size={16} />
             Back
           </Button>
         </Link>
+        {doctor ? (
+          <Button variant="danger" onClick={removeFromClinic}>
+            Remove from clinic
+          </Button>
+        ) : null}
       </div>
 
       <PageHeader
         title={doctor ? `Dr. ${doctor.full_name}` : "Doctor detail"}
-        subtitle="Schedule, patients, fees, and clinic commission split."
+        subtitle="Schedule, patients, fees, and normal / discounted commission splits."
       />
 
       {error ? (
@@ -179,29 +292,20 @@ export default function ClinicDoctorDetailPage() {
           </div>
 
           <Card className="p-5">
-            <h3 className="text-sm font-semibold text-slate-100">Commission split</h3>
+            <h3 className="text-sm font-semibold text-slate-100">Clinic settings</h3>
             <p className="mt-1 text-sm text-slate-400">
-              Clinic share is applied per visit from fee base (paid amount → expected →
-              consultation fee). Doctor keeps the rest.
+              Session length, status, and consultation fee for this clinic.
             </p>
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               <label className="block text-sm text-slate-300">
-                Type
-                <select
-                  className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100"
-                  value={commissionType}
-                  onChange={(e) => setCommissionType(e.target.value)}
-                >
-                  <option value="percentage">Percentage</option>
-                  <option value="fixed">Fixed PKR</option>
-                </select>
-              </label>
-              <label className="block text-sm text-slate-300">
-                Clinic {commissionType === "percentage" ? "%" : "amount"}
+                Session (minutes)
                 <input
+                  type="number"
+                  min={5}
+                  max={240}
                   className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100"
-                  value={commissionValue}
-                  onChange={(e) => setCommissionValue(e.target.value)}
+                  value={sessionTime}
+                  onChange={(e) => setSessionTime(Number(e.target.value))}
                 />
               </label>
               <label className="block text-sm text-slate-300">
@@ -212,34 +316,139 @@ export default function ClinicDoctorDetailPage() {
                   onChange={(e) => setConsultationFee(e.target.value)}
                 />
               </label>
-            </div>
-            <div className="mt-3 space-y-1 text-sm text-slate-300">
-              <p>
-                {commissionType === "percentage" && doctorPctLabel !== null
-                  ? `Clinic ${commissionValue}% · Doctor ${doctorPctLabel}%`
-                  : `Clinic fixed ${money(commissionValue)} · Doctor = fee − clinic`}
-              </p>
-              {liveSplit ? (
-                <p className="text-slate-200">
-                  Per visit @ {money(String(liveSplit.fee))} → Clinic{" "}
-                  {money(String(liveSplit.clinicShare))} · Doctor{" "}
-                  {money(String(liveSplit.doctorShare))}
-                </p>
-              ) : (
-                <p className="text-slate-500">Enter a valid fee and commission to preview.</p>
-              )}
-              <p className="text-slate-400">
-                Doctor earnings so far (saved rates):{" "}
-                {money(doctor.stats.doctor_earnings_total)} · Clinic take:{" "}
-                {money(doctor.stats.clinic_commission_total)}
-              </p>
+              <label className="flex items-center gap-2 text-sm text-slate-300 sm:mt-7">
+                <input
+                  type="checkbox"
+                  checked={isActive}
+                  onChange={(e) => setIsActive(e.target.checked)}
+                />
+                Active
+              </label>
             </div>
             <div className="mt-4">
-              <Button onClick={saveCommission} disabled={saving}>
-                {saving ? "Saving…" : "Save commission"}
+              <Button onClick={saveSettings} disabled={savingSettings}>
+                {savingSettings ? "Saving…" : "Save settings"}
               </Button>
             </div>
           </Card>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Card className="p-5">
+              <h3 className="text-sm font-semibold text-slate-100">
+                Normal commission split
+              </h3>
+              <p className="mt-1 text-sm text-slate-400">
+                Applied for normal (non-discounted) visits.
+              </p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <label className="block text-sm text-slate-300">
+                  Type
+                  <select
+                    className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100"
+                    value={commissionType}
+                    onChange={(e) => setCommissionType(e.target.value)}
+                  >
+                    <option value="percentage">Percentage</option>
+                    <option value="fixed">Fixed PKR</option>
+                  </select>
+                </label>
+                <label className="block text-sm text-slate-300">
+                  Clinic {commissionType === "percentage" ? "%" : "amount"}
+                  <input
+                    className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100"
+                    value={commissionValue}
+                    onChange={(e) => setCommissionValue(e.target.value)}
+                  />
+                </label>
+              </div>
+              <div className="mt-3 space-y-1 text-sm text-slate-300">
+                <p>
+                  {commissionType === "percentage" && doctorPctLabel !== null
+                    ? `Clinic ${commissionValue}% · Doctor ${doctorPctLabel}%`
+                    : `Clinic fixed ${money(commissionValue)} · Doctor = fee − clinic`}
+                </p>
+                {liveSplit ? (
+                  <p className="text-slate-200">
+                    Per visit @ {money(String(liveSplit.fee))} → Clinic{" "}
+                    {money(String(liveSplit.clinicShare))} · Doctor{" "}
+                    {money(String(liveSplit.doctorShare))}
+                  </p>
+                ) : (
+                  <p className="text-slate-500">
+                    Enter a valid fee and commission to preview.
+                  </p>
+                )}
+                <p className="text-slate-400">
+                  Doctor earnings so far (saved rates):{" "}
+                  {money(doctor.stats.doctor_earnings_total)} · Clinic take:{" "}
+                  {money(doctor.stats.clinic_commission_total)}
+                </p>
+              </div>
+              <div className="mt-4">
+                <Button onClick={saveNormalCommission} disabled={savingNormal}>
+                  {savingNormal ? "Saving…" : "Save"}
+                </Button>
+              </div>
+            </Card>
+
+            <Card className="p-5">
+              <h3 className="text-sm font-semibold text-slate-100">
+                Discounted commission split
+              </h3>
+              <p className="mt-1 text-sm text-slate-400">
+                Applied when the appointment patient type is discounted (jamat).
+              </p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <label className="block text-sm text-slate-300">
+                  Type
+                  <select
+                    className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100"
+                    value={discountedCommissionType}
+                    onChange={(e) => setDiscountedCommissionType(e.target.value)}
+                  >
+                    <option value="percentage">Percentage</option>
+                    <option value="fixed">Fixed PKR</option>
+                  </select>
+                </label>
+                <label className="block text-sm text-slate-300">
+                  Clinic{" "}
+                  {discountedCommissionType === "percentage" ? "%" : "amount"}
+                  <input
+                    className="mt-1 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100"
+                    value={discountedCommissionValue}
+                    onChange={(e) => setDiscountedCommissionValue(e.target.value)}
+                  />
+                </label>
+              </div>
+              <div className="mt-3 space-y-1 text-sm text-slate-300">
+                <p>
+                  {discountedCommissionType === "percentage" &&
+                  discountedDoctorPctLabel !== null
+                    ? `Clinic ${discountedCommissionValue}% · Doctor ${discountedDoctorPctLabel}%`
+                    : `Clinic fixed ${money(discountedCommissionValue)} · Doctor = fee − clinic`}
+                </p>
+                {liveDiscountedSplit ? (
+                  <p className="text-slate-200">
+                    Per discounted visit @ {money(String(liveDiscountedSplit.fee))} →
+                    Clinic {money(String(liveDiscountedSplit.clinicShare))} · Doctor{" "}
+                    {money(String(liveDiscountedSplit.doctorShare))}
+                  </p>
+                ) : (
+                  <p className="text-slate-500">
+                    Enter a valid fee and commission to preview.
+                  </p>
+                )}
+              </div>
+              <div className="mt-4">
+                <Button
+                  onClick={saveDiscountedCommission}
+                  disabled={savingDiscounted}
+                >
+                  {savingDiscounted ? "Saving…" : "Save"}
+                </Button>
+              </div>
+            </Card>
+          </div>
 
           <div className="grid gap-6 lg:grid-cols-2">
             <Card className="p-5">
@@ -295,6 +504,7 @@ export default function ClinicDoctorDetailPage() {
                 <thead className="bg-slate-900/60 text-xs uppercase text-slate-400">
                   <tr>
                     <th className="px-4 py-3">Patient</th>
+                    <th className="px-4 py-3">Type</th>
                     <th className="px-4 py-3">Date / time</th>
                     <th className="px-4 py-3">Status</th>
                     <th className="px-4 py-3">Fee</th>
@@ -305,7 +515,7 @@ export default function ClinicDoctorDetailPage() {
                 <tbody>
                   {doctor.appointments.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-4 py-6 text-slate-400">
+                      <td colSpan={7} className="px-4 py-6 text-slate-400">
                         No appointments yet.
                       </td>
                     </tr>
@@ -314,16 +524,27 @@ export default function ClinicDoctorDetailPage() {
                       <tr key={a.id} className="border-t border-slate-800">
                         <td className="px-4 py-3 text-slate-100">
                           <div>{a.patient_name}</div>
-                          <div className="text-xs text-slate-500">{a.patient_phone}</div>
+                          <div className="text-xs text-slate-500">
+                            🇵🇰 {formatPkPhone(a.patient_phone)}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          {a.patient_type === "discounted" ? (
+                            <div>
+                              <Badge tone="info">Discounted</Badge>
+                              {a.jamat_name ? (
+                                <p className="mt-1 text-xs text-slate-500">
+                                  {a.jamat_name}
+                                </p>
+                              ) : null}
+                            </div>
+                          ) : (
+                            <Badge tone="neutral">Normal</Badge>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-slate-300">
-                          {a.token_date}
-                          {a.scheduled_at
-                            ? ` · ${new Date(a.scheduled_at).toLocaleTimeString("en-PK", {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}`
-                            : ""}
+                          {formatPkDate(a.token_date)}
+                          {a.scheduled_at ? ` · ${formatPkTime(a.scheduled_at)}` : ""}
                         </td>
                         <td className="px-4 py-3">
                           <Badge
@@ -362,7 +583,7 @@ export default function ClinicDoctorDetailPage() {
                   >
                     <div>
                       <p className="font-medium text-slate-100">{p.name}</p>
-                      <p className="text-slate-500">{p.phone}</p>
+                      <p className="text-slate-500">🇵🇰 {formatPkPhone(p.phone)}</p>
                     </div>
                     <Badge tone="info">{p.visit_count} visits</Badge>
                   </div>

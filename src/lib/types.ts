@@ -179,6 +179,9 @@ export type ClinicDoctorLink = {
   commission_type: "percentage" | "fixed" | string;
   commission_value: string;
   commission_updated_at: string | null;
+  discounted_commission_type: "percentage" | "fixed" | string;
+  discounted_commission_value: string;
+  discounted_commission_updated_at: string | null;
 };
 
 export type ClinicDoctorAvailabilityWindow = {
@@ -224,6 +227,8 @@ export type ClinicDoctorAppointment = {
   patient_id: number | null;
   patient_name: string;
   patient_phone: string;
+  patient_type?: "normal" | "discounted" | string;
+  jamat_name?: string;
   fee_base: string;
   payment_status: string;
   payment_method: string;
@@ -304,6 +309,8 @@ export type Appointment = {
   token_code: string;
   status: "upcoming" | "completed" | "cancelled" | "rejected";
   notes: string;
+  patient_type?: "normal" | "discounted" | string;
+  jamat_name?: string;
   created_at: string;
   updated_at: string;
 };

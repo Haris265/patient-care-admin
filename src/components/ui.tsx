@@ -72,7 +72,7 @@ export function Input({
         <span className="text-xs font-medium text-[var(--premium-label)]">{label}</span>
       ) : null}
       <input
-        className={`w-full rounded-xl border border-[var(--premium-border)] bg-[var(--premium-field-bg)] px-3.5 py-2.5 text-sm text-[var(--premium-field-text)] placeholder:text-[var(--premium-field-placeholder)] shadow-[inset_0_1px_2px_rgba(0,0,0,0.35)] outline-none transition focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 ${className}`}
+        className={`w-full rounded-xl border border-[var(--premium-border)] bg-[var(--premium-field-bg)] px-3.5 py-2.5 text-sm text-[var(--premium-field-text)] caret-[var(--premium-field-text)] placeholder:text-[var(--premium-field-placeholder)] shadow-[inset_0_1px_2px_rgba(0,0,0,0.35)] outline-none transition focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20 [&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_var(--premium-field-bg)] [&:-webkit-autofill]:[-webkit-text-fill-color:var(--premium-field-text)] [&:-webkit-autofill]:caret-[var(--premium-field-text)] ${className}`}
         {...props}
       />
     </label>
@@ -180,11 +180,13 @@ export function Modal({
   title,
   onClose,
   children,
+  className = "",
 }: {
   open: boolean;
   title: string;
   onClose: () => void;
   children: ReactNode;
+  className?: string;
 }) {
   if (!open) return null;
   return (
@@ -194,8 +196,12 @@ export function Modal({
         onClick={onClose}
         aria-label="Close modal"
       />
-      <div className="premium-card premium-card-glow relative z-10 w-full max-w-lg animate-fade-in-up rounded-3xl p-6">
-        <div className="mb-4 flex items-center justify-between">
+      <div
+        className={`premium-card premium-card-glow relative z-10 flex max-h-[90vh] w-full flex-col animate-fade-in-up rounded-3xl p-6 ${
+          className.includes("max-w-") ? "" : "max-w-lg"
+        } ${className}`}
+      >
+        <div className="mb-4 flex shrink-0 items-center justify-between">
           <h2 className="text-lg font-bold text-slate-50">{title}</h2>
           <button
             onClick={onClose}
@@ -204,7 +210,7 @@ export function Modal({
             ✕
           </button>
         </div>
-        {children}
+        <div className="min-h-0 flex-1 overflow-y-auto pr-0.5">{children}</div>
       </div>
     </div>
   );
