@@ -45,7 +45,7 @@ export default function DashboardPage() {
       label: "Total Patients",
       value: stats?.total_patients,
       icon: Users,
-      gradient: "from-sky-400 to-sky-600",
+      gradient: "from-accent-400 to-brand-600",
       href: "/admin/patients",
     },
     {
@@ -68,7 +68,7 @@ export default function DashboardPage() {
         <div className="relative z-10 flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="premium-chip mb-3 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold">
-              <Sparkles size={13} className="text-sky-300" />
+              <Sparkles size={13} className="text-brand-300" />
               Live clinic overview
             </div>
             <h1 className="text-2xl font-bold text-slate-50 md:text-3xl">Operations Dashboard</h1>
@@ -136,7 +136,7 @@ export default function DashboardPage() {
                   <div>
                     <p className="text-sm font-semibold text-slate-100">
                       {a.patient_name}
-                      <span className="ml-2 text-xs font-bold text-sky-300">{a.token_code}</span>
+                      <span className="ml-2 text-xs font-bold text-brand-300">{a.token_code}</span>
                     </p>
                     <p className="text-xs text-slate-400">
                       Dr. {a.doctor_name} · {formatWhen(a.scheduled_at)}
@@ -179,7 +179,7 @@ export default function DashboardPage() {
                 <tbody>
                   {stats.recent_appointments.map((a) => (
                     <tr key={a.id} className="border-t border-slate-700/70">
-                      <td className="py-2.5 font-bold text-sky-300">{a.token_code}</td>
+                      <td className="py-2.5 font-bold text-brand-300">{a.token_code}</td>
                       <td className="py-2.5 font-medium text-slate-100">{a.patient_name}</td>
                       <td className="py-2.5 text-slate-400">Dr. {a.doctor_name}</td>
                       <td className="py-2.5">

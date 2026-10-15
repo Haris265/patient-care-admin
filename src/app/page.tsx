@@ -20,9 +20,9 @@ export default function Home() {
   return (
     <div
       className="flex min-h-screen items-center justify-center"
-      style={{ background: "linear-gradient(135deg, #0a1220 0%, #152744 100%)" }}
+      style={{ background: "var(--loading-bg)" }}
     >
-      <div className="h-10 w-10 animate-spin rounded-full border-2 border-sky-400 border-t-transparent" />
+      <div className="h-10 w-10 animate-spin rounded-full border-2 border-accent-400 border-t-transparent" />
     </div>
   );
 }

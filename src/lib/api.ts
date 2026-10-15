@@ -1,5 +1,6 @@
 import type {
   Appointment,
+  BillingInvoice,
   BillingPackage,
   Clinic,
   ClinicBilling,
@@ -74,7 +75,7 @@ async function request<T>(
   if (res.status === 401) {
     clearAuth();
     if (typeof window !== "undefined" && !window.location.pathname.includes("/login")) {
-      window.location.href = "/login";
+      window.location.href = loginPathForLocation(window.location.pathname);
     }
     throw new Error("Unauthorized");
   }
@@ -97,12 +98,30 @@ async function request<T>(
 
 export function homePathForRole(role: string): string {
   if (role === "superadmin") return "/superadmin/dashboard";
-  if (role === "clinic_admin") return "/clinic/packages";
+  if (role === "clinic_admin") return "/clinic/dashboard";
   if (role === "admin") return "/admin/dashboard";
   return "/login";
 }
 
-export async function login(username: string, password: string) {
+export function loginPathForRole(role: string): string {
+  if (role === "superadmin") return "/superadmin/login";
+  if (role === "clinic_admin") return "/clinic/login";
+  return "/login";
+}
+
+export function loginPathForLocation(pathname: string): string {
+  if (pathname.startsWith("/superadmin")) return "/superadmin/login";
+  if (pathname.startsWith("/clinic")) return "/clinic/login";
+  return "/login";
+}
+
+const ROLE_LABELS: Record<string, string> = {
+  superadmin: "superadmin",
+  clinic_admin: "clinic admin",
+  admin: "admin",
+};
+
+export async function login(username: string, password: string, expectedRole?: string) {
   const data = await request<{
     access: string;
     refresh: string;
@@ -118,6 +137,10 @@ export async function login(username: string, password: string) {
   const allowed = ["admin", "superadmin", "clinic_admin"];
   if (!allowed.includes(data.user.role)) {
     throw new Error("This portal is for admin, superadmin, or clinic admin users.");
+  }
+  if (expectedRole && data.user.role !== expectedRole) {
+    const label = ROLE_LABELS[expectedRole] || expectedRole;
+    throw new Error(`This login is for ${label} accounts only. Use the correct portal.`);
   }
   setAuth(data.access, data.refresh, data.user);
   return data;
@@ -338,12 +361,22 @@ export const api = {
       `/api/superadmin/packages/${qs ? `?${qs}` : ""}`,
     );
   },
-  createPackage: (payload: Partial<BillingPackage> & { name: string; code: string; price: string | number }) =>
+  createPackage: (
+    payload: Partial<BillingPackage> & {
+      name: string;
+      code: string;
+      price: string | number;
+      clinic_id: number;
+    },
+  ) =>
     request<BillingPackage>("/api/superadmin/packages/", {
       method: "POST",
       body: JSON.stringify(payload),
     }),
-  updatePackage: (uuid: string, payload: Partial<BillingPackage>) =>
+  updatePackage: (
+    uuid: string,
+    payload: Partial<BillingPackage> & { clinic_id?: number },
+  ) =>
     request<BillingPackage>(`/api/superadmin/packages/${uuid}/`, {
       method: "PATCH",
       body: JSON.stringify(payload),
@@ -356,11 +389,39 @@ export const api = {
       `/api/superadmin/clinics/${qs ? `?${qs}` : ""}`,
     );
   },
-  updateBillingClinic: (id: number, payload: Partial<ClinicBilling>) =>
+  createBillingClinic: (payload: {
+    name: string;
+    address: string;
+    city?: string;
+    area?: string;
+    phone?: string;
+    latitude: number | string;
+    longitude: number | string;
+    is_active?: boolean;
+  }) =>
+    request<ClinicBilling>("/api/superadmin/clinics/", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  updateBillingClinic: (
+    id: number,
+    payload: Partial<{
+      name: string;
+      address: string;
+      city: string;
+      area: string;
+      phone: string;
+      latitude: number | string;
+      longitude: number | string;
+      is_active: boolean;
+    }>,
+  ) =>
     request<ClinicBilling>(`/api/superadmin/clinics/${id}/`, {
       method: "PATCH",
       body: JSON.stringify(payload),
     }),
+  deleteBillingClinic: (id: number) =>
+    request<void>(`/api/superadmin/clinics/${id}/`, { method: "DELETE" }),
   createClinicAdmin: (payload: {
     clinic_id: number;
     username: string;
@@ -383,7 +444,7 @@ export const api = {
     uuid: string,
     payload: { amount?: string | number; notes?: string; start_date?: string } = {},
   ) =>
-    request<{ payment: ClinicPayment; subscription: ClinicSubscription }>(
+    request<{ invoice: BillingInvoice; subscription: ClinicSubscription }>(
       `/api/superadmin/purchase-requests/${uuid}/approve/`,
       { method: "POST", body: JSON.stringify(payload) },
     ),
@@ -399,16 +460,31 @@ export const api = {
     notes?: string;
     start_date?: string;
   }) =>
-    request<{ payment: ClinicPayment; subscription: ClinicSubscription }>(
-      "/api/superadmin/assign/",
-      { method: "POST", body: JSON.stringify(payload) },
-    ),
+    request<{ subscription: ClinicSubscription }>("/api/superadmin/assign/", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
   clinicSubscriptions: (params: Record<string, string> = {}) => {
     const qs = new URLSearchParams(params).toString();
     return request<Paginated<ClinicSubscription> | ClinicSubscription[]>(
       `/api/superadmin/subscriptions/${qs ? `?${qs}` : ""}`,
     );
   },
+  superadminInvoices: (params: Record<string, string> = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return request<Paginated<BillingInvoice> | BillingInvoice[]>(
+      `/api/superadmin/invoices/${qs ? `?${qs}` : ""}`,
+    );
+  },
+  markInvoicePaid: (uuid: string, payload: { notes?: string } = {}) =>
+    request<{
+      invoice: BillingInvoice;
+      payment: ClinicPayment;
+      subscription: ClinicSubscription;
+    }>(`/api/superadmin/invoices/${uuid}/mark-paid/`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
   clinicPayments: (params: Record<string, string> = {}) => {
     const qs = new URLSearchParams(params).toString();
     return request<Paginated<ClinicPayment> | ClinicPayment[]>(
@@ -435,6 +511,33 @@ export const api = {
       `/api/clinic/packages/${qs ? `?${qs}` : ""}`,
     );
   },
+  clinicOffers: (params: Record<string, string> = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return request<Paginated<ClinicSubscription> | ClinicSubscription[]>(
+      `/api/clinic/offers/${qs ? `?${qs}` : ""}`,
+    );
+  },
+  acceptOffer: (uuid: string) =>
+    request<{ subscription: ClinicSubscription; invoice: BillingInvoice }>(
+      `/api/clinic/subscriptions/${uuid}/accept/`,
+      { method: "POST", body: JSON.stringify({}) },
+    ),
+  rejectOffer: (uuid: string) =>
+    request<ClinicSubscription>(`/api/clinic/subscriptions/${uuid}/reject/`, {
+      method: "POST",
+      body: JSON.stringify({}),
+    }),
+  clinicInvoices: (params: Record<string, string> = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return request<Paginated<BillingInvoice> | BillingInvoice[]>(
+      `/api/clinic/invoices/${qs ? `?${qs}` : ""}`,
+    );
+  },
+  submitInvoicePayment: (uuid: string, payload: { notes?: string } = {}) =>
+    request<BillingInvoice>(`/api/clinic/invoices/${uuid}/submit-payment/`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
   clinicPurchaseRequests: (params: Record<string, string> = {}) => {
     const qs = new URLSearchParams(params).toString();
     return request<Paginated<PurchaseRequest> | PurchaseRequest[]>(

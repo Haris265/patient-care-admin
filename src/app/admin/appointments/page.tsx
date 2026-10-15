@@ -159,7 +159,7 @@ export default function AppointmentsPage() {
                 {items.map((a) => (
                   <tr key={a.id} className="border-t border-slate-700/70 hover:bg-slate-800/50">
                     <td className="px-5 py-3">
-                      <span className="inline-flex rounded-lg border border-sky-400/30 bg-sky-500/10 px-2.5 py-1 text-sm font-bold text-sky-200">
+                      <span className="inline-flex rounded-lg border border-accent-400/30 bg-accent-500/10 px-2.5 py-1 text-sm font-bold text-brand-200">
                         {a.token_code}
                       </span>
                     </td>

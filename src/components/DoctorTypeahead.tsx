@@ -76,7 +76,7 @@ export function DoctorTypeahead({
           setOpen(true);
           if (value) onChange("");
         }}
-        className="w-full rounded-xl border border-[var(--premium-border)] bg-[var(--premium-field-bg)] px-3.5 py-2.5 text-sm text-[var(--premium-field-text)] placeholder:text-[var(--premium-field-placeholder)] shadow-[inset_0_1px_2px_rgba(0,0,0,0.35)] outline-none transition focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/20"
+        className="w-full rounded-xl border border-[var(--premium-border)] bg-[var(--premium-field-bg)] px-3.5 py-2.5 text-sm text-[var(--premium-field-text)] placeholder:text-[var(--premium-field-placeholder)] shadow-[inset_0_1px_2px_rgba(0,0,0,0.35)] outline-none transition focus:border-accent-400/60 focus:ring-2 focus:ring-brand-500/20"
       />
       {/* Keep native required working when value empty */}
       <input type="hidden" value={value} required={required} readOnly />
@@ -89,8 +89,8 @@ export function DoctorTypeahead({
               <li key={d.id}>
                 <button
                   type="button"
-                  className={`flex w-full flex-col px-3 py-2 text-left text-sm hover:bg-sky-500/15 ${
-                    String(d.id) === value ? "bg-sky-500/10 text-sky-100" : "text-slate-100"
+                  className={`flex w-full flex-col px-3 py-2 text-left text-sm hover:bg-brand-500/15 ${
+                    String(d.id) === value ? "bg-brand-500/10 text-brand-100" : "text-slate-100"
                   }`}
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => {

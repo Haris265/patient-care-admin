@@ -107,7 +107,7 @@ export default function PatientDetailPage() {
             byDate.map(([date, appts]) => (
               <Card key={date} className="overflow-hidden">
                 <div className="border-b border-slate-700/70 px-5 py-3">
-                  <h2 className="text-sm font-semibold text-sky-200">{formatDate(date)}</h2>
+                  <h2 className="text-sm font-semibold text-brand-200">{formatDate(date)}</h2>
                   <p className="text-xs text-slate-400">{appts.length} booking(s)</p>
                 </div>
                 <table className="min-w-full text-left text-sm">
@@ -123,7 +123,7 @@ export default function PatientDetailPage() {
                     {appts.map((a) => (
                       <tr key={a.id} className="border-t border-slate-700/70">
                         <td className="px-5 py-3">
-                          <span className="inline-flex rounded-lg border border-sky-400/30 bg-sky-500/10 px-2.5 py-1 text-sm font-bold text-sky-200">
+                          <span className="inline-flex rounded-lg border border-accent-400/30 bg-accent-500/10 px-2.5 py-1 text-sm font-bold text-brand-200">
                             {a.token_code}
                           </span>
                         </td>

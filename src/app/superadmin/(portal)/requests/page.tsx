@@ -89,7 +89,7 @@ export default function RequestsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Purchase requests"
-        subtitle="Approve cash payments to activate clinic packages."
+        subtitle="Approve renewals to send an invoice (clinic pays before activation)."
         action={
           <Select
             value={status}
@@ -151,7 +151,7 @@ export default function RequestsPage() {
                       {r.status === "pending" ? (
                         <div className="flex justify-end gap-2">
                           <Button type="button" onClick={() => openApprove(r)}>
-                            <Check size={14} /> Approve cash
+                            <Check size={14} /> Approve → invoice
                           </Button>
                           <Button type="button" variant="danger" onClick={() => onReject(r)}>
                             <X size={14} /> Reject
@@ -169,15 +169,16 @@ export default function RequestsPage() {
         )}
       </Card>
 
-      <Modal open={approveOpen} title="Confirm cash payment" onClose={() => setApproveOpen(false)}>
+      <Modal open={approveOpen} title="Approve & send invoice" onClose={() => setApproveOpen(false)}>
         <div className="space-y-3">
           <p className="text-sm text-slate-400">
-            {selected?.clinic_name} → {selected?.package_name}
+            {selected?.clinic_name} → {selected?.package_name}. An invoice will be sent; package
+            activates after payment is confirmed.
           </p>
-          <Input label="Cash amount" value={amount} onChange={(e) => setAmount(e.target.value)} />
+          <Input label="Invoice amount" value={amount} onChange={(e) => setAmount(e.target.value)} />
           <Input label="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
           <Button type="button" disabled={saving} className="w-full" onClick={onApprove}>
-            {saving ? "Confirming…" : "Confirm & activate"}
+            {saving ? "Sending…" : "Send invoice"}
           </Button>
         </div>
       </Modal>

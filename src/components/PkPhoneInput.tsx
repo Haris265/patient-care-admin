@@ -38,7 +38,7 @@ export function PkPhoneInput({
         <span className="text-xs font-medium text-[var(--premium-label)]">{label}</span>
       ) : null}
       <div
-        className={`flex overflow-hidden rounded-xl border bg-[var(--premium-field-bg)] shadow-[inset_0_1px_2px_rgba(0,0,0,0.35)] transition focus-within:border-sky-400/60 focus-within:ring-2 focus-within:ring-sky-400/20 ${
+        className={`flex overflow-hidden rounded-xl border bg-[var(--premium-field-bg)] shadow-[inset_0_1px_2px_rgba(0,0,0,0.35)] transition focus-within:border-accent-400/60 focus-within:ring-2 focus-within:ring-brand-500/20 ${
           showError
             ? "border-red-400/50"
             : "border-[var(--premium-border)]"

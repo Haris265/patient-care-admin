@@ -3,34 +3,38 @@
 @tailwind utilities;
 
 :root {
-  /* Full dark clinical theme */
-  --bg: #070b12;
-  --premium-bg: #0a101a;
-  --premium-bg-2: #0d1524;
-  --premium-surface: rgba(18, 28, 45, 0.88);
+  /* Dark clinical theme — Patient Care teal */
+  --bg: #070f0d;
+  --premium-bg: #0a1411;
+  --premium-bg-2: #0d1a16;
+  --premium-surface: rgba(18, 36, 32, 0.88);
   --premium-border: rgba(148, 163, 184, 0.14);
-  --premium-border-strong: rgba(56, 189, 248, 0.28);
+  --premium-border-strong: rgba(45, 212, 191, 0.28);
   --premium-grid: rgba(148, 163, 184, 0.06);
-  --premium-glow-primary: rgba(59, 130, 246, 0.28);
-  --premium-glow-accent: rgba(56, 189, 248, 0.22);
-  --premium-text: #e8eef8;
+  --premium-glow-primary: rgba(20, 93, 79, 0.35);
+  --premium-glow-accent: rgba(45, 212, 191, 0.22);
+  --premium-text: #e8f5f1;
   --premium-muted-text: rgba(203, 213, 225, 0.72);
-  --premium-label: #93c5fd;
+  --premium-label: #6abba5;
   --premium-divider: rgba(148, 163, 184, 0.14);
-  --premium-field-bg: rgba(8, 14, 24, 0.75);
+  --premium-field-bg: rgba(8, 18, 15, 0.75);
   --premium-field-text: #f1f5f9;
   --premium-field-placeholder: rgba(148, 163, 184, 0.55);
-  --premium-scrollbar: rgba(96, 165, 250, 0.35);
+  --premium-scrollbar: rgba(61, 154, 130, 0.4);
+  --sidebar-bg: linear-gradient(165deg, rgba(14, 46, 38, 0.98) 0%, rgba(7, 20, 16, 0.99) 70%);
+  --login-panel-bg: linear-gradient(155deg, #0a1f1a 0%, #0e2e26 45%, #071410 100%);
+  --loading-bg: linear-gradient(135deg, #071410 0%, #0e2e26 100%);
+  --card-gradient: linear-gradient(145deg, rgba(32, 58, 50, 0.55), rgba(18, 36, 32, 0.92));
   --shadow-showroom:
     0 1px 0 rgba(255, 255, 255, 0.05) inset,
     0 2px 8px rgba(0, 0, 0, 0.35),
     0 28px 50px -24px rgba(0, 0, 0, 0.65),
-    0 0 28px -16px rgba(59, 130, 246, 0.25);
+    0 0 28px -16px rgba(20, 93, 79, 0.3);
   --shadow-raised:
     0 1px 0 rgba(255, 255, 255, 0.08) inset,
-    0 8px 18px -4px rgba(37, 99, 235, 0.45),
+    0 8px 18px -4px rgba(20, 93, 79, 0.5),
     0 2px 6px rgba(0, 0, 0, 0.4);
-  --shadow-glow: 0 0 0 1px rgba(59, 130, 246, 0.25), 0 14px 32px -8px rgba(59, 130, 246, 0.4);
+  --shadow-glow: 0 0 0 1px rgba(20, 93, 79, 0.3), 0 14px 32px -8px rgba(20, 93, 79, 0.45);
 }
 
 * {
@@ -60,9 +64,9 @@ body {
 
 .premium-page-bg {
   background:
-    radial-gradient(circle at 12% 8%, rgba(59, 130, 246, 0.16), transparent 34%),
-    radial-gradient(circle at 88% 10%, rgba(14, 165, 233, 0.12), transparent 30%),
-    radial-gradient(circle at 50% 100%, rgba(30, 64, 175, 0.1), transparent 42%),
+    radial-gradient(circle at 12% 8%, rgba(20, 93, 79, 0.2), transparent 34%),
+    radial-gradient(circle at 88% 10%, rgba(45, 212, 191, 0.1), transparent 30%),
+    radial-gradient(circle at 50% 100%, rgba(14, 63, 54, 0.14), transparent 42%),
     linear-gradient(155deg, var(--premium-bg) 0%, var(--premium-bg-2) 55%, var(--bg) 100%);
 }
 
@@ -78,9 +82,7 @@ body {
   position: relative;
   overflow: hidden;
   border: 1px solid var(--premium-border);
-  background:
-    linear-gradient(145deg, rgba(36, 52, 78, 0.55), rgba(18, 28, 45, 0.92)),
-    var(--premium-surface);
+  background: var(--card-gradient), var(--premium-surface);
   box-shadow: var(--shadow-showroom);
   backdrop-filter: blur(16px) saturate(1.2);
   -webkit-backdrop-filter: blur(16px) saturate(1.2);
@@ -95,8 +97,8 @@ body {
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(56, 189, 248, 0.55),
-    rgba(96, 165, 250, 0.4),
+    rgba(45, 212, 191, 0.55),
+    rgba(61, 154, 130, 0.4),
     transparent
   );
   opacity: 0.85;
@@ -152,13 +154,13 @@ body {
 
 .premium-chip {
   background:
-    linear-gradient(145deg, rgba(59, 130, 246, 0.22), rgba(14, 165, 233, 0.1)),
-    rgba(15, 23, 42, 0.7);
+    linear-gradient(145deg, rgba(20, 93, 79, 0.28), rgba(45, 212, 191, 0.1)),
+    rgba(15, 32, 28, 0.7);
   border: 1px solid rgba(148, 163, 184, 0.18);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.06) inset,
-    0 10px 20px -14px rgba(37, 99, 235, 0.45);
-  color: #dbeafe;
+    0 10px 20px -14px rgba(20, 93, 79, 0.5);
+  color: #c5e6dc;
 }
 
 .depth-glow {

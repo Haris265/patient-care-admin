@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Building2, CreditCard, Package, ShoppingCart } from "lucide-react";
 
@@ -25,21 +26,25 @@ export default function SuperadminDashboardPage() {
       label: "Active clinic subs",
       value: data?.active_subscriptions ?? 0,
       icon: Package,
+      href: "/superadmin/clinics",
     },
     {
       label: "Pending requests",
       value: data?.pending_requests ?? 0,
       icon: ShoppingCart,
+      href: "/superadmin/requests",
     },
     {
       label: "Active packages",
       value: data?.total_packages ?? 0,
       icon: Building2,
+      href: "/superadmin/packages",
     },
     {
       label: "Cash this month",
       value: data ? `Rs ${data.cash_collected_month}` : "—",
       icon: CreditCard,
+      href: "/superadmin/payments",
     },
   ];
 
@@ -52,23 +57,31 @@ export default function SuperadminDashboardPage() {
         </p>
       ) : null}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {stats.map(({ label, value, icon: Icon }) => (
-          <Card key={label} className="p-5">
-            {loading ? (
-              <Skeleton className="h-16 w-full" />
-            ) : (
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-slate-400">{label}</p>
-                  <p className="mt-2 text-2xl font-bold text-white">{value}</p>
+        {loading
+          ? [1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-28" />)
+          : stats.map(({ label, value, icon: Icon, href }, i) => (
+              <Link
+                key={label}
+                href={href}
+                className={`premium-card premium-hover-lift animate-fade-in-up stagger-${Math.min(i + 1, 4)} block rounded-3xl p-5 no-underline`}
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-slate-400">{label}</p>
+                    <p className="mt-2 text-2xl font-bold text-white">{value}</p>
+                  </div>
+                  <span
+                    className="flex h-10 w-10 items-center justify-center rounded-xl text-white"
+                    style={{
+                      background:
+                        "linear-gradient(145deg, #3d9a82 0%, #145D4F 55%, #0b322b 100%)",
+                    }}
+                  >
+                    <Icon size={18} />
+                  </span>
                 </div>
-                <span className="rounded-xl bg-amber-500/15 p-2 text-amber-300">
-                  <Icon size={18} />
-                </span>
-              </div>
-            )}
-          </Card>
-        ))}
+              </Link>
+            ))}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">

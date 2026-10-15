@@ -126,7 +126,7 @@ export default function DoctorDetailPage() {
 
           <Card className="overflow-hidden">
             <div className="border-b border-slate-700/70 px-5 py-3">
-              <h2 className="text-sm font-semibold text-sky-200">Availability</h2>
+              <h2 className="text-sm font-semibold text-brand-200">Availability</h2>
               <p className="text-xs text-slate-400">Weekly clinic hours</p>
             </div>
             {!slots.length ? (

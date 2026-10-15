@@ -9,6 +9,8 @@ export type UserInfo = {
 export type BillingPackage = {
   id: number;
   uuid: string;
+  clinic: number | null;
+  clinic_name?: string | null;
   name: string;
   code: string;
   description: string;
@@ -18,6 +20,34 @@ export type BillingPackage = {
   max_patients: number;
   features: Record<string, unknown>;
   is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type InvoiceStatus =
+  | "pending"
+  | "pending_verification"
+  | "paid"
+  | "overdue"
+  | "cancelled";
+
+export type BillingInvoice = {
+  id: number;
+  uuid: string;
+  clinic: number;
+  clinic_name: string;
+  package: number;
+  package_name: string;
+  subscription: number | null;
+  subscription_uuid: string | null;
+  purchase_request: number | null;
+  period_start: string;
+  period_end: string;
+  amount: string;
+  due_date: string;
+  status: InvoiceStatus;
+  paid_at: string | null;
+  notes: string;
   created_at: string;
   updated_at: string;
 };
@@ -50,7 +80,12 @@ export type ActiveSubscriptionSummary = {
 };
 
 export type ClinicPaymentSummary = {
-  package_status: "active" | "none" | "expired";
+  package_status:
+    | "active"
+    | "none"
+    | "expired"
+    | "pending_clinic"
+    | "pending_payment";
   package_name: string | null;
   package_code: string | null;
   duration_days: number | null;
@@ -61,9 +96,18 @@ export type ClinicPaymentSummary = {
   amount_paid: string | null;
   due: string;
   paid_this_month: string;
-  payment_status: "paid" | "partial" | "unpaid" | "n/a";
+  payment_status: "paid" | "partial" | "unpaid" | "n/a" | "pending_verification";
   ledger_balance: string;
 };
+
+export type ClinicSubscriptionStatus =
+  | "pending_clinic"
+  | "pending_payment"
+  | "pending"
+  | "active"
+  | "expired"
+  | "cancelled"
+  | "rejected";
 
 export type ClinicSubscription = {
   id: number;
@@ -77,7 +121,7 @@ export type ClinicSubscription = {
   start_date: string;
   end_date: string;
   amount_paid: string;
-  status: "pending" | "active" | "expired" | "cancelled";
+  status: ClinicSubscriptionStatus;
   is_active: boolean;
   is_currently_valid: boolean;
   notes: string;
@@ -344,6 +388,12 @@ export type Paginated<T> = {
   results: T[];
 };
 
+export type ClinicLockReason =
+  | "none"
+  | "awaiting_accept"
+  | "awaiting_payment"
+  | "expired";
+
 export type ClinicBilling = Clinic & {
   billing_email?: string;
   owner_name?: string;
@@ -352,6 +402,10 @@ export type ClinicBilling = Clinic & {
   clinic_admin_username?: string | null;
   active_subscription?: ActiveSubscriptionSummary | null;
   payment_summary?: ClinicPaymentSummary | null;
+  access_locked?: boolean;
+  lock_reason?: ClinicLockReason;
+  pending_offer_uuid?: string | null;
+  blocking_invoice_uuid?: string | null;
 };
 
 export type LedgerListResponse = Paginated<LedgerEntry> & {

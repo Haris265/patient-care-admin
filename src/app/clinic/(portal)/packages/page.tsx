@@ -61,7 +61,7 @@ export default function ClinicPackagesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Packages"
-        subtitle="Choose a package and request purchase. Superadmin confirms cash payment."
+        subtitle="Request renewal or purchase. Superadmin sends an invoice; pay to activate."
       />
       {error ? (
         <p className="rounded-xl border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
@@ -99,7 +99,7 @@ export default function ClinicPackagesPage() {
                   ? "Request pending"
                   : busyId === pkg.id
                     ? "Requesting…"
-                    : "Request purchase"}
+                    : "Request renewal"}
               </Button>
             </Card>
           ))}

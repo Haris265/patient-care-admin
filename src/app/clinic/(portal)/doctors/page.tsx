@@ -249,7 +249,7 @@ export default function ClinicDoctorsPage() {
 
   const specialityPicker = (
     <div>
-      <p className="mb-2 text-sm font-medium text-sky-200">Specialities</p>
+      <p className="mb-2 text-sm font-medium text-brand-200">Specialities</p>
       <div className="grid max-h-40 gap-2 overflow-y-auto sm:grid-cols-2">
         {specialities.map((s) => {
           const active = selectedSpecs.includes(s.id);
@@ -260,8 +260,8 @@ export default function ClinicDoctorsPage() {
               onClick={() => toggleSpec(s.id)}
               className={`rounded-xl border px-3 py-2.5 text-left text-sm transition ${
                 active
-                  ? "border-sky-400/50 bg-sky-500/15 text-sky-100"
-                  : "border-slate-600 hover:border-sky-400/40"
+                  ? "border-accent-400/50 bg-accent-500/15 text-brand-100"
+                  : "border-slate-600 hover:border-accent-400/40"
               }`}
             >
               {s.name}

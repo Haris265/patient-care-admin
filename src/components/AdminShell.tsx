@@ -17,6 +17,7 @@ import {
   HeartPulse,
 } from "lucide-react";
 
+import { BrandLogo } from "@/components/BrandLogo";
 import { clearAuth, getStoredUser } from "@/lib/api";
 import type { UserInfo } from "@/lib/types";
 
@@ -56,9 +57,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
     return (
       <div
         className="flex min-h-screen items-center justify-center"
-        style={{ background: "linear-gradient(135deg, #0a1220 0%, #152744 100%)" }}
+        style={{ background: "var(--loading-bg)" }}
       >
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-sky-400 border-t-transparent" />
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-accent-400 border-t-transparent" />
       </div>
     );
   }
@@ -67,23 +68,23 @@ export function AdminShell({ children }: { children: ReactNode }) {
     <aside
       className="premium-card relative m-3 flex h-[calc(100vh-1.5rem)] w-64 flex-col overflow-hidden rounded-3xl text-slate-200"
       style={{
-        background: "linear-gradient(165deg, rgba(15,28,46,0.98) 0%, rgba(10,18,32,0.99) 70%)",
+        background: "var(--sidebar-bg)",
         boxShadow: "var(--shadow-showroom)",
       }}
     >
       <div
         className="float-blob pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full opacity-25 blur-3xl"
-        style={{ background: "radial-gradient(circle, #38bdf8, transparent 70%)" }}
+        style={{ background: "radial-gradient(circle, #2dd4bf, transparent 70%)" }}
       />
       <div
         className="float-blob-slow pointer-events-none absolute -bottom-24 -left-20 h-64 w-64 rounded-full opacity-20 blur-3xl"
-        style={{ background: "radial-gradient(circle, #2563af, transparent 70%)" }}
+        style={{ background: "radial-gradient(circle, #145D4F, transparent 70%)" }}
       />
 
       <div className="relative z-10 flex items-center justify-between px-5 py-6">
         <div>
-          <div className="text-xl font-bold tracking-tight text-white">PatientCare</div>
-          <div className="mt-1 text-xs uppercase tracking-[0.22em] text-sky-300/80">
+          <BrandLogo priority />
+          <div className="mt-2 text-xs uppercase tracking-[0.22em] text-brand-300/80">
             Clinic CRM
           </div>
         </div>
@@ -106,9 +107,17 @@ export function AdminShell({ children }: { children: ReactNode }) {
               onClick={() => setOpen(false)}
               className={`shine-hover animate-fade-in-up group flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 stagger-${Math.min(i + 1, 4)} ${
                 active
-                  ? "translate-x-0.5 border border-sky-300/25 bg-gradient-to-b from-brand-400 to-brand-700 text-white depth-glow"
+                  ? "translate-x-0.5 border border-accent-400/25 text-white depth-glow"
                   : "text-slate-300/80 hover:translate-x-0.5 hover:bg-white/8 hover:text-white"
               }`}
+              style={
+                active
+                  ? {
+                      background:
+                        "linear-gradient(145deg, #3d9a82 0%, #145D4F 55%, #0b322b 100%)",
+                    }
+                  : undefined
+              }
             >
               <span className="premium-chip flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border-white/10 bg-white/5 text-inherit">
                 <Icon size={17} />
@@ -161,7 +170,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           <div
             className="rounded-full px-3 py-1 text-xs font-semibold text-white"
             style={{
-              background: "linear-gradient(145deg, #3b82f6 0%, #1e4b8c 100%)",
+              background: "linear-gradient(145deg, #3d9a82 0%, #145D4F 55%, #0b322b 100%)",
             }}
           >
             Admin

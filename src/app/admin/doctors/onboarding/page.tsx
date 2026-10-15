@@ -82,7 +82,7 @@ export default function DoctorOnboardingPage() {
           </div>
 
           <div>
-            <p className="mb-2 text-sm font-medium text-sky-200">Specialities</p>
+            <p className="mb-2 text-sm font-medium text-brand-200">Specialities</p>
             <div className="grid gap-2 sm:grid-cols-2">
               {specialities.map((s) => {
                 const active = selected.includes(s.id);
@@ -93,8 +93,8 @@ export default function DoctorOnboardingPage() {
                     onClick={() => toggleSpeciality(s.id)}
                     className={`rounded-xl border px-3 py-3 text-left text-sm transition ${
                       active
-                        ? "border-sky-400/50 bg-sky-500/15 text-sky-100"
-                        : "border-slate-600 hover:border-sky-400/40"
+                        ? "border-accent-400/50 bg-accent-500/15 text-brand-100"
+                        : "border-slate-600 hover:border-accent-400/40"
                     }`}
                   >
                     {s.name}

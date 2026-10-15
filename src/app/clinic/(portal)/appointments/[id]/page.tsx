@@ -149,7 +149,7 @@ export default function ClinicAppointmentDetailPage() {
         <>
           <Card className="p-5">
             <div className="mb-5 flex flex-wrap items-center gap-3">
-              <span className="inline-flex rounded-lg border border-sky-400/30 bg-sky-500/10 px-3 py-1.5 text-lg font-bold text-sky-200">
+              <span className="inline-flex rounded-lg border border-accent-400/30 bg-accent-500/10 px-3 py-1.5 text-lg font-bold text-brand-200">
                 {item.token_code}
               </span>
               <Badge
@@ -222,7 +222,7 @@ export default function ClinicAppointmentDetailPage() {
           </Card>
 
           <Card className="p-5">
-            <h2 className="mb-2 text-sm font-semibold text-sky-200">Notes</h2>
+            <h2 className="mb-2 text-sm font-semibold text-brand-200">Notes</h2>
             <p className="text-sm text-slate-300">{item.notes?.trim() || "No notes."}</p>
           </Card>
 

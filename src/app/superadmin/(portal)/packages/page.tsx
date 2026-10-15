@@ -1,10 +1,10 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 
 import { api, unwrapList } from "@/lib/api";
-import type { BillingPackage } from "@/lib/types";
+import type { BillingPackage, ClinicBilling } from "@/lib/types";
 import {
   Badge,
   Button,
@@ -14,18 +14,22 @@ import {
   Input,
   Modal,
   PageHeader,
+  SearchableSelect,
   Select,
   Skeleton,
 } from "@/components/ui";
 
 export default function PackagesPage() {
   const [items, setItems] = useState<BillingPackage[]>([]);
+  const [clinics, setClinics] = useState<ClinicBilling[]>([]);
+  const [clinicFilter, setClinicFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<BillingPackage | null>(null);
 
+  const [clinicId, setClinicId] = useState("");
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [description, setDescription] = useState("");
@@ -35,11 +39,17 @@ export default function PackagesPage() {
   const [maxPatients, setMaxPatients] = useState("500");
   const [isActive, setIsActive] = useState("true");
 
-  async function load() {
+  async function load(filter = clinicFilter) {
     setLoading(true);
     try {
-      const data = await api.packages({ page_size: "100" });
-      setItems(unwrapList(data));
+      const params: Record<string, string> = { page_size: "100" };
+      if (filter) params.clinic = filter;
+      const [pkgs, clinicList] = await Promise.all([
+        api.packages(params),
+        api.billingClinics({ page_size: "200" }),
+      ]);
+      setItems(unwrapList(pkgs));
+      setClinics(unwrapList(clinicList));
       setError("");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load");
@@ -50,10 +60,27 @@ export default function PackagesPage() {
 
   useEffect(() => {
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const clinicOptions = useMemo(
+    () => clinics.filter((c) => c.is_active !== false),
+    [clinics],
+  );
+
+  const clinicSelectOptions = useMemo(
+    () =>
+      clinicOptions.map((c) => ({
+        value: String(c.id),
+        label: c.name,
+        sublabel: [c.city, c.area].filter(Boolean).join(", "),
+      })),
+    [clinicOptions],
+  );
 
   function resetForm() {
     setEditing(null);
+    setClinicId(clinicOptions[0] ? String(clinicOptions[0].id) : "");
     setName("");
     setCode("");
     setDescription("");
@@ -71,6 +98,7 @@ export default function PackagesPage() {
 
   function openEdit(pkg: BillingPackage) {
     setEditing(pkg);
+    setClinicId(pkg.clinic != null ? String(pkg.clinic) : "");
     setName(pkg.name);
     setCode(pkg.code);
     setDescription(pkg.description);
@@ -84,6 +112,10 @@ export default function PackagesPage() {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!clinicId) {
+      setError("Select a clinic for this package.");
+      return;
+    }
     setSaving(true);
     try {
       const payload = {
@@ -95,6 +127,7 @@ export default function PackagesPage() {
         max_doctors: Number(maxDoctors),
         max_patients: Number(maxPatients),
         is_active: isActive === "true",
+        clinic_id: Number(clinicId),
       };
       if (editing) {
         await api.updatePackage(editing.uuid, payload);
@@ -125,11 +158,25 @@ export default function PackagesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Packages"
-        subtitle="Catalog of clinic subscription packages."
+        subtitle="Clinic-scoped subscription packages."
         action={
-          <Button type="button" onClick={openCreate}>
-            <Plus size={16} /> New package
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <SearchableSelect
+              className="min-w-[14rem]"
+              value={clinicFilter}
+              onChange={(next) => {
+                setClinicFilter(next);
+                load(next);
+              }}
+              options={clinicSelectOptions}
+              placeholder="Search clinics…"
+              allowEmpty
+              emptyLabel="All clinics"
+            />
+            <Button type="button" onClick={openCreate}>
+              <Plus size={16} /> New package
+            </Button>
+          </div>
         }
       />
       {error ? (
@@ -144,7 +191,7 @@ export default function PackagesPage() {
           </div>
         ) : items.length === 0 ? (
           <div className="p-5">
-            <EmptyState title="No packages" description="Create your first clinic package." />
+            <EmptyState title="No packages" description="Create a package for a clinic." />
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -152,6 +199,7 @@ export default function PackagesPage() {
               <thead className="border-b border-slate-700/70 text-xs uppercase text-slate-400">
                 <tr>
                   <th className="px-5 py-3">Name</th>
+                  <th className="px-5 py-3">Clinic</th>
                   <th className="px-5 py-3">Price</th>
                   <th className="px-5 py-3">Duration</th>
                   <th className="px-5 py-3">Limits</th>
@@ -166,6 +214,7 @@ export default function PackagesPage() {
                       <div className="font-medium text-slate-100">{pkg.name}</div>
                       <div className="text-xs text-slate-400">{pkg.code}</div>
                     </td>
+                    <td className="px-5 py-3 text-slate-300">{pkg.clinic_name || "—"}</td>
                     <td className="px-5 py-3 text-slate-200">Rs {pkg.price}</td>
                     <td className="px-5 py-3 text-slate-300">{pkg.duration_days} days</td>
                     <td className="px-5 py-3 text-slate-300">
@@ -203,6 +252,14 @@ export default function PackagesPage() {
         }}
       >
         <form onSubmit={onSubmit} className="space-y-3">
+          <SearchableSelect
+            label="Clinic"
+            value={clinicId}
+            onChange={setClinicId}
+            options={clinicSelectOptions}
+            placeholder="Search clinic…"
+            required
+          />
           <Input label="Name" value={name} onChange={(e) => setName(e.target.value)} required />
           <Input
             label="Code"
